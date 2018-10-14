@@ -2,14 +2,12 @@ package com.dmity.androidthreading
 
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import android.util.Log
+import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
 
-//    private var isRunning = true
     private lateinit var leftLeg: LeftLeg
     private lateinit var rightLeg: RightLeg
-    private var steps: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -20,9 +18,9 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+
     override fun onStop() {
         super.onStop()
-//        isRunning = false
         leftLeg.stop()
         rightLeg.stop()
     }
@@ -33,33 +31,58 @@ class MainActivity : AppCompatActivity() {
         Thread(rightLeg).start()
     }
 
+    @Synchronized
+    private fun makeStep(text: String) {
+        println(text)
+        runOnUiThread { tvText.text = text }
+    }
+
     private inner class LeftLeg : Runnable, Leg() {
-        override fun run() {
-            synchronized(steps) {
+        override fun run() = synchronized(tvText) {
 
-                while (isRunning) {
-                    Log.e("Threads", "Left step #$steps")
+            while (isRunning) {
+
+                try {
+                    Thread.sleep(1000)
                     steps += 1
+                    makeStep("Left step #$steps")
 
+                    (tvText as java.lang.Object).notify()
+                    (tvText as java.lang.Object).wait()
+
+
+                } catch (e: InterruptedException) {
+                    e.printStackTrace()
                 }
 
             }
         }
     }
+
 
     private inner class RightLeg : Runnable, Leg() {
-        override fun run() {
-            synchronized(steps) {
+        override fun run() = synchronized(tvText) {
 
-                while (isRunning) {
-                    Log.e("Threads", "Right step #$steps")
+            while (isRunning) {
+
+                try {
+
+                    Thread.sleep(1000)
                     steps += 1
-                }
+                    makeStep("Right step #$steps")
 
+                    (tvText as java.lang.Object).notify()
+                    (tvText as java.lang.Object).wait()
+
+
+                } catch (e: InterruptedException) {
+                    e.printStackTrace()
+                }
             }
         }
     }
-
-
-
 }
+
+
+
+
